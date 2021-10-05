@@ -1,116 +1,72 @@
-BUTTONS :	STRUCT
-                    field_name : type;
-                    field_name : type;
-                END_STRUCT
+DEFINE Column USING _battery AND _column
 
-FIRSTBUTTON :	STRUCT
-                    Column : INTEGER;
-                    currentFloor : INTEGER;
-                END_STRUCT
-                
-MIDDLEBUTTON :	STRUCT
-                    Column : INTEGER;
-                    currentFloor : INTEGER;
-                END_STRUCT
+    SET Battery TO _battery
+    SET Column TO _column
+    SET elevatorsList
+    SET elevatorFound TO TRUE
+    
+    SEQUENCE assignElevator USING _elevatorsList AND _targetFloor
+        SET elevatorsList TO _elevatorsList
+        SET targetFloor TO _targetFloor
+        SET elevatorFound TO FALSE
+        WHILE elevatorFound IS FALSE
+            FOR EACH Elevator in elevatorsList
+                IF Elevator IS isIdle THEN
+                    SET elevatorFound TO TRUE                
+                    CALL Elevator movingElevator WITH Elevator currentFloor AND targetFloor
+                ELSE
+                ENDIF
+            ENDFOR
+            Wait 5 seconds
 
-LASTBUTTON :	STRUCT
-                    Column : INTEGER;
-                    currentFloor : INTEGER;
-                END_STRUCT
-
-ELEVATOR :	STRUCT
-                    Cage : CHAR;
-                    Column : INTEGER;
-                    currentFloor : INTEGER = 1;
-                    Moving : BOOLEAN = false;
-                    FUNCTION setCurrentFloor (newFloor) : return_type
-                    BEGIN
-                        this.currentFloor = newFloor;
-                    END
-                    FUNCTION moveElevator(current, targetFloor, movingElevator) : return_type
-                    VAR
-                        set_declarations
-                    BEGIN
-                        set_instructions
-                        RETURN value ;
-                    END
-                END_STRUCT
-
-FUNCTION moveElevator(currentFloor, targetFloor, movingElevator) : BOOLEAN
-VAR
-    Steps : INTEGER;
-    Direction : INTEGER;
-BEGIN
-    IF (movingElevator = FALSE) THEN
-        movingElevator = TRUE;
-        Steps = (targetFloor - currentFloor);
-        Direction = Steps / MODULUS(Steps);
-
-        FOR remainingFloors FROM currentFloor TO targetFloor STEP Direction  DO
-            currentFloor = currentFloor + Direction ;
-        END_FOR
-    ELSE
-    END_IF
-END
+ENDDEFINE
 
 
+DEFINE Elevator USING _column AND _id
+
+    SET ID TO _id
+    SET Column TO _column
+    SET currentFloor TO 1
+    SET isIdle TO TRUE
+
+    SEQUENCE movingElevator USING _currentFloor AND _targetFloor
+        SET currentFloor TO _currentFloor
+        SET targetFloor TO _targetFloor
+        SET Steps
+        SET Direction
+        IF Elevator IS isIdle THEN
+            SET isIdle TO FALSE
+            SET Steps TO SUBSTRACT currentFloor TO targetFloor
+            SET Direction TO Steps DIVIDE BY ABSOLUTE OF Steps
+            FOR EACH Direction TO Steps DO
+                SET currentFloor ADD Direction
+            ENDFOR
+            Elevator openDoors
+        ELSE
+        END_IF
+    ENDSEQUENCE
+
+    SEQUENCE openDoors
+    ENDSEQUENCE
+
+ENDDEFINE
 
 
+DEFINE Buttons USING _floor AND _column
 
+    SET Column TO _column
+    SET Floor TO _floor
+    SET buttonPressed = FALSE
+    
+    IF buttonPressed IS TRUE THEN
+        SEQUENCE callElevator USING Floor AND _elevatorsList
+            SET targetFloor TO Floor
+            SET elevatorsList TO _elevatorsList
+            CALL Column assignElevator WITH elevatorsList AND targetFloor
+        ENDSEQUENCE
+        buttonPressed = FALSE
+    ENDIF
+    
+    GET 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-=======================================================================================
-
-Move :	STRUCT
-                targetFloor : INTEGER;
-                currentFloor : INTEGER;
-                targetFloorAcquired : BOOLEAN = TRUE;
-                FUNCTION setTargetFloor(targetFloor) :
-                BEGIN
-                     this.targetFloor = targetFloor;
-                END
-
-                FUNCTION moveElevator() :
-                BEGIN
-                    Steps : INTEGER;
-                    Direction : INTEGER;
-                VAR
-                    Steps = (this.targetFloor - this.currentFloor);
-                    Direction = Steps / MODULUS(Steps);
-
-                    FOR i FROM this.currentFloor TO this.targetFloor STEP Direction DO
-                        IF (this.currentFloor == this.targetFloor) THEN
-                            i = this.targetFloor;
-                        ELSE
-                            set_instructions
-                        END_IF
-                    END_FOR
-                END
-            END_STRUCT
+ENDDEFINE

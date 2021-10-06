@@ -3,21 +3,88 @@ DEFINE Column USING _battery AND _column
     SET Battery TO _battery
     SET Column TO _column
     SET elevatorsList
-    SET elevatorFound TO TRUE
-    
-    SEQUENCE assignElevator USING _elevatorsList AND _targetFloor
+
+'Same Direction + Floor on opposite of the Direction'
+'FOR the Elevator Floor Direction = (buttonFloor - elevatorFloor) * buttonDirection
+'IF Positive = THEN GOOD
+'IF Negative = ENDIF
+'IF the rest THEN go FOR calculation'
+'FOR the calculation (|target - current| + |target - current|'
+
+    'assignElevator USING buttonFloor AND Direction'
+    SEQUENCE assignElevator USING buttonFloor and buttonDirection
+
+        SET bestElevator TO first Elevator created
+        SET bestTrajectory TO columnFloors MULTIPLY BY 2
+        SET numberCheck TO 0
+
+
+        FOR EACH elevatorsList Elevator
+
+            SET distanceButtonElevator TO buttonFloor MINUS elevatorFloor
+            SET elevatorComparedDirection TO MULTIPLY distanceButtonElevator BY buttonDirection
+
+            IF elevatorFloor IS EQUAL TO buttonFloor AND Elevator Direction IS EQUAL TO buttonDirection
+
+                SET bestElevator TO Elevator
+                CALL Elevator movingElevator WITH buttonFloor
+
+                RETURN
+
+            ELSE IF buttonDirection IS EQUAL TO Elevator Direction AND elevatorComparedDirection IS GREATER THAN 0
+            
+                IF Elevator ID IS NOT EQUAL TO LAST Elevator ID 'elevatorList LENGTH'
+            
+                    IF elevatorComparedDirection IS SMALLER THAN PREVIOUS elevatorComparedDirection
+
+                        SET bestElevator TO Elevator
+                        SET numberCheck TO 1
+                    
+                    ENDIF
+                ELSE
+
+            ELSE IF numberCheck IS SMALLER THAN 1
+
+                SET distanceElevatorTarget TO ABSOLUTE OF elevatorFloor MINUS Elevator targetFloor
+                SET distanceButtonTarget TO ABSOLUTE OF Elevator targetFloor MINUS buttonFloor
+                SET elevatorButtonTrajectory TO distanceElevatorTarget ADD distanceButtonTarget
+
+                    IF elevatorButtonTrajectory IS SMALLER THAN columnFloors BY 2
+                        SET bestTrajectory TO elevatorButtonTrajectory
+                        SET bestElevator TO Elevator ID
+                    ENDIF
+            ENDIF
+
+        ENDFOR
+        
+    ENDSEQUENCE
+
+    SEQUENCE compareElevators
+        
+        FOR EACH elevatorsList Elevator
+
+
+
+        ENDFOR
+
+    ENDSEQUENCE
+    'SEQUENCE assignElevator USING _elevatorsList AND _targetFloor
+
         SET elevatorsList TO _elevatorsList
         SET targetFloor TO _targetFloor
-        SET elevatorFound TO FALSE
-        WHILE elevatorFound IS FALSE
+
             FOR EACH Elevator in elevatorsList
-                IF Elevator IS isIdle THEN
-                    SET elevatorFound TO TRUE                
+
+                IF Elevator IS isIdle
+
                     CALL Elevator movingElevator WITH Elevator currentFloor AND targetFloor
-                ELSE
+
                 ENDIF
+
             ENDFOR
+
             Wait 5 seconds
+    'ENDSEQUENCE
 
 ENDDEFINE
 
@@ -26,47 +93,50 @@ DEFINE Elevator USING _column AND _id
 
     SET ID TO _id
     SET Column TO _column
+    SET Score TO 0
     SET currentFloor TO 1
+    SET elevatorOpenedDoors TO FALSE
     SET isIdle TO TRUE
+    SET Direction TO 0
+    SET targetFloor TO currentFloor
 
-    SEQUENCE movingElevator USING _currentFloor AND _targetFloor
-        SET currentFloor TO _currentFloor
+    SEQUENCE movingElevator USING _targetFloor
+
         SET targetFloor TO _targetFloor
-        SET Steps
-        SET Direction
-        IF Elevator IS isIdle THEN
+        SET Steps TO 0
+
+        IF Elevator IS isIdle
+
             SET isIdle TO FALSE
-            SET Steps TO SUBSTRACT currentFloor TO targetFloor
-            SET Direction TO Steps DIVIDE BY ABSOLUTE OF Steps
-            FOR EACH Direction TO Steps DO
+            SET Steps TO currentFloor MINUS targetFloor
+
+            FOR EACH Steps DO Direction
+
                 SET currentFloor ADD Direction
+
             ENDFOR
+
+            SET targetFloor TO currentFloor
             Elevator openDoors
-        ELSE
-        END_IF
+
+        ENDIF
+
     ENDSEQUENCE
 
     SEQUENCE openDoors
+        WRITE "Elevator's doors have opened"
     ENDSEQUENCE
 
 ENDDEFINE
 
 
-DEFINE Buttons USING _floor AND _column
+DEFINE Buttons
 
-    SET Column TO _column
-    SET Floor TO _floor
-    SET buttonPressed = FALSE
-    
-    IF buttonPressed IS TRUE THEN
-        SEQUENCE callElevator USING Floor AND _elevatorsList
-            SET targetFloor TO Floor
-            SET elevatorsList TO _elevatorsList
-            CALL Column assignElevator WITH elevatorsList AND targetFloor
-        ENDSEQUENCE
-        buttonPressed = FALSE
-    ENDIF
-    
-    GET 
+    SET buttonFloor
+    SET upButton TO FALSE
+    SET downButton TO FALSE
+    SET buttonDirection
 
+    FOR EACH Elevator
+    
 ENDDEFINE

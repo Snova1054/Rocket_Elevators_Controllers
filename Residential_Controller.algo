@@ -27,9 +27,8 @@ DEFINE Column USING _battery AND _column
             IF elevatorFloor IS EQUAL TO buttonFloor AND Elevator Direction IS EQUAL TO buttonDirection
 
                 SET bestElevator TO Elevator
-                CALL Elevator movingElevator WITH buttonFloor
 
-                RETURN
+                RETURN bestElevator
 
             ELSE IF buttonDirection IS EQUAL TO Elevator Direction AND elevatorComparedDirection IS GREATER THAN 0
             

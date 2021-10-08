@@ -173,7 +173,7 @@ DEFINE insideButtons USING nbFloors
     SET buttonNumber TO nbFloors Index
 ENDDEFINE
 
-DEFINE MAIN
+DEFINE Main
     READ nbFloors
     READ nbElevators
     READ userInputDirection AND userInputFloor
@@ -191,13 +191,6 @@ DEFINE MAIN
 ENDDEFINE
 
 'SCENARIO 1'
-column.elevatorsList[0].currentFloor = 2;
-column.elevatorsList[0].direction = "up";
-
-column.callElevator(3, "up")
-column.requestedFloor(15)
-
-'SCENARIO 1'
 nbFloors IS EQUAL TO 10
 nbElevators per Column IS EQUAL TO 2
 Column elevatorsList Index 1 currentFloor IS EQUAL TO 2
@@ -206,15 +199,7 @@ Column elevatorsList Index 2 currentFloor IS EQUAL TO 6
 Column elevatorsList Index 2 Direction IS EQUAL TO 0
 
 CALL Column callElevator WITH 3 AND "UP"
-currentElevator ID IS EQUAL TO 1 'A'
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 CALL Column requestFloor WITH 7 AND currentElevator
-currentElevator currentFloor IS EQUAL TO 7
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 
 'SCENARIO 2'
 Column elevatorsList Index 1 currentFloor IS EQUAL TO 10
@@ -223,36 +208,13 @@ Column elevatorsList Index 2 currentFloor IS EQUAL TO 3
 Column elevatorsList Index 2 Direction IS EQUAL TO 0
 
 CALL Column callElevator WITH 1 AND "UP"
-currentElevator ID IS EQUAL TO 2 'B'
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 CALL Column requestFloor WITH 6 AND currentElevator
-currentElevator currentFloor IS EQUAL TO 6
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 
 CALL Column callElevator WITH 1 AND "UP"
-currentElevator ID IS EQUAL TO 2 'B'
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 CALL Column requestFloor WITH 6 AND currentElevator
-currentElevator currentFloor IS EQUAL TO 6
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 
 CALL Column callElevator WITH 9 AND "DOWN"
-currentElevator ID IS EQUAL TO 1 'A'
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 CALL Column requestFloor WITH 2 AND currentElevator
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 
 'SCENARIO 3'
 Column elevatorsList Index 1 currentFloor IS EQUAL TO 10
@@ -262,23 +224,7 @@ Column elevatorsList Index 2 Direction IS EQUAL TO 1
 Column elevatorsList Index 2 targetFloor IS EQUAL TO 6
 
 CALL Column callElevator WITH 3 AND "DOWN"
-currentElevator ID IS EQUAL TO 1 'A'
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 CALL Column requestFloor WITH 2 AND currentElevator
-currentElevator currentFloor IS EQUAL TO 2
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 
 CALL Column callElevator WITH 10 AND "DOWN"
-currentElevator ID IS EQUAL TO 2 'B'
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"
 CALL Column requestFloor WITH 3 AND currentElevator
-currentElevator currentFloor IS EQUAL TO 3
-DISPLAY "Elevator's doors are opening"
-WAIT 5 secondes
-DISPLAY "Elevator's doors are closing"

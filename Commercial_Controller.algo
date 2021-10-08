@@ -1,47 +1,28 @@
-DEFINE MAIN
-
-    READ nbColumns
-    READ nbFloors
-    READ nbElevators
-    READ userInputDirection AND userInputFloor
-    SET columnIndex TO 1
-    CALL createColumns WITH nbColumns AND nbElevators RETURN columnsList
-    SET columnsList
-    SET userDirection TO 0
-
-    IF userInputDirection IS EQUAL TO "UP"
-        SET userDirection TO 1
-    ELSE
-        SET userDirection TO -1
-    ENDIF
-        
-    CALL Column callElevator WITH userDirection AND userInputFloor 'How to call specific Column? Maybe put the callElevator SEQUENCE in the Column Battery itself'
-    
-    SEQUENCE createColumns USING nbFloors AND nbColumns AND nbElevators
-        FOR nbColumns
-            SET Column WITH nbFloors AND nbElevators AND columnIndex
-            INCREMENT columnIndex
-        ENDFOR
-    ENDSEQUENCE
-
-ENDDEFINE
-
-DEFINE Column USING nbElevators AND columnIndex AND nbFloors
-
-    SET ColumnID TO columnIndex
+'Defines each Column'
+DEFINE Column USING nbFloors AND nbElevators
     SET elevatorIndex TO 1
-    SET elevatorsList CALL createElevatorsList WITH ColumnID AND elevatorIndex AND nbFloors 'RETURN'
+    SET ColumnID TO 1
+    CALL createElevatorsList WITH ColumnID AND elevatorIndex AND nbFloors RETURNING elevatorsList
+    SET elevatorsList
     'Creates the elevatorsList by assigning the Column ID and an ID to the Elevator and the nbFloors'
-    SEQUENCE createElevatorsList USING ColumnID AND elevatorIndex AND nbElevators
+    SEQUENCE createElevatorsList USING ColumnID AND elevatorIndex AND nbElevators RETURN elevatorsList
+        SET elevatorsList ARRAY OF nbElevators
         FOR nbElevators
-            SET Elevator WITH ColumnID AND elevatorIndex AND nbFloors
+            SET Elevator TO NEW Elevator WITH ColumnID AND elevatorIndex AND nbFloors
+            SET elevatorsList elevatorIndex TO Elevator
             INCREMENT elevatorIndex
         ENDFOR
     ENDSEQUENCE
 
+    SEQUENCE createOutsideButtons USING nbFloors
+        FOR nbFloors
+            CALL outsideButtons WITH nbFloors Index
+        ENDFOR
+    ENDSEQUENCE
+
     'Find best Elevator according to the User's Direction, User's Floor, Elevator's Direction, Elevator's Floor and Elevator's Target'
-    SEQUENCE findBestSElevator USING buttonFloor and buttonDirection
-        SET bestElevator TO first Elevator created
+    SEQUENCE findBestElevator USING buttonFloor and buttonDirection RETURN bestElevator
+        SET bestElevator TO first Elevator created 'elevatorsList Elevator Index 1'
         SET bestTrajectory TO columnFloors MULTIPLY BY 2
         'The numberCheck is used to know which possibilities to check'
         SET numberCheck TO -1
@@ -55,29 +36,29 @@ DEFINE Column USING nbElevators AND columnIndex AND nbFloors
                 SET bestElevator TO Elevator
                 RETURN bestElevator
             'If the Elevator is on the same Direction but it has yet to pass passed the User's Floor it will keep checking for others alike, ignoring the last conditions'
-            ELSE IF buttonDirection IS EQUAL TO Elevator Direction AND elevatorComparedDirection IS GREATER THAN 0
+            ELSE IF buttonDirection IS EQUAL TO Elevator Direction AND elevatorComparedDirection IS GREATER THAN -1
                 SET numberCheck TO 1
 
                 IF numberCheck IS EQUAL TO 1
                     SET bestTrajectory TO elevatorComparedDirection
                     SET bestElevator TO Elevator
                     SET numberCheck TO 2
-                    
+
                 ELSE IF numberCheck IS EQUAL TO 2 AND elevatorComparedDirection IS SMALLER THAN bestTrajectory
                     SET bestTrajectory TO elevatorComparedDirection
                     SET bestElevator TO Elevator
                 ENDIF
             'Elevator is Idle'
             ELSE IF Elevator Direction IS EQUAL TO 0
-                SET elevatorComparedDirection TO ABSOLUTE OF elevatorComparedDirection
+                SET distanceButtonElevator TO ABSOLUTE OF distanceButtonElevator
                 'If there one Idle Elevator, it will stop checking the last condition'
                 IF numberCheck IS SMALLER THAN 0
                     SET numberCheck TO 0
-                    SET bestTrajectory TO elevatorComparedDirection
+                    SET bestTrajectory TO distanceButtonElevator
                     SET bestElevator TO Elevator
                 'If there's another Idle Elevator, it will compare those Elevators together'
-                ELSE IF numberCheck is EQUAL TO 0 AND elevatorComparedDirection IS SMALLER THAN bestTrajectory
-                    SET bestTrajectory to elevatorComparedDirection
+                ELSE IF numberCheck is EQUAL TO 0 AND distanceButtonElevator IS SMALLER THAN bestTrajectory
+                    SET bestTrajectory to distanceButtonElevator
                     SET bestElevator TO Elevator
                 ENDIF
             'Elevator Direction is passed the User's Floor, then has to finish it's own course and pick up the User afterwards'
@@ -101,65 +82,70 @@ DEFINE Column USING nbElevators AND columnIndex AND nbFloors
     ENDSEQUENCE
 
     SEQUENCE waitMovingElevator USING bestElevator AND buttonFloor AND buttonDirection
-        'Best case scenario, Elevator on the same Floor and on the same Direciton as the User requested'
+        'Best case scenario, Elevator on the same Floor and on the same Direction as the User requested'
         IF bestElevator currentFloor IS EQUAL TO buttonFloor
             RETURN
         'Elevator with the same Direction as the User's (UP), therefore can go straight to the User'
         ELSE IF bestElevator Direction IS EQUAL TO buttonDirection AND bestElevator currentFloor IS SMALLER THAN buttonFloor AND bestElevator targetFloor IS GREATER THAN buttonFloor
-            CALL Elevator movingElevator WITH buttonFloor AND buttonDirection
+            CALL Elevator movingElevator WITH buttonFloor
         'Elevator with the same Direction as the User's (DOWN), therefore can go straight tot eh User'
         ELSE IF bestElevator Direction IS EQUAL TO buttonDirection AND bestElevator currentFloor IS GREATER THAN buttonFloor AND bestElevator targetFloor IS SMALLER THAN buttonFloor
-            CALL Elevator movingElevator WITH buttonFloor AND buttonDirection       
+            CALL Elevator movingElevator WITH buttonFloor      
         'Elevator has a stop before picking up the User' 
         ELSE
-            CALL Elevator movingElevator WITH Elevator targetFloor AND Elevator Direction
-            CALL Elevator movingElevator WITH buttonFloor AND buttonDirection
+            CALL Elevator movingElevator WITH Elevator targetFloor
+            CALL Elevator movingElevator WITH buttonFloor
         ENDIF
     ENDSEQUENCE
 
-    SEQUENCE callElevator USING userInputFloor AND userDirection 
-        CALL Column findBestSElevator WITH userInputFloor AND userDirection RETURNING bestElevator
-        CALL Column assignElevator WITH bestElevator RETURN Elevator
-        CALL waitMovingElevator WITH Elevator AND userInputFloor AND userDirection
-        CALL Elevator movingElevator WITH userInputFloor AND userDirection
+    SEQUENCE callElevator USING userInputFloor AND userDirection RETURN currentElevator
+        SET currentElevator
+        SET currentElevator TO CALL findBestElevator WITH userInputFloor AND userDirection RETURNING bestElevator
+        CALL waitMovingElevator WITH currentElevator AND userInputFloor AND userDirection
+        CALL currentElevator movingElevator WITH userInputFloor
+        RETURN currentElevator
+    ENDSEQUENCE
+
+    SEQUENCE requestFloor USING userInputFloor AND currentElevator
+        CALL currentElevator movingElevator WITH userInputFloor
     ENDSEQUENCE
 
 ENDDEFINE
 
+'Defines each Elevator'
 DEFINE Elevator USING _column AND _id AND nbFloors
-
     SET ID TO _id
     SET Column TO _column
-    SET currentFloor TO 1
+    SET currentFloor
     SET elevatorOpenedDoors TO FALSE
     SET Direction TO 0
-    SET targetFloor TO currentFloor
-    SET insideButtonsList CALL createElevatorInsideButtons WITH columnFloors nbFloors
-    'Moves the selected Elevator with a targetFloor and a targetDirection'
-    SEQUENCE movingElevator USING _targetFloor AND _targetDirection
+    SET targetFloor
 
+    SET insideButtonsList CALL createElevatorInsideButtons WITH nbFloors
+
+    'Moves the selected Elevator to the targetFloor'
+    SEQUENCE movingElevator USING _targetFloor
         IF _targetFloor IS EQUAL TO currentFloor
             CALL openDoors
         ELSE
-            SET Steps TO ABSOLUTE OF _targetFloor MINUS currentFloor
-
-            FOR EACH Steps 
-                ADD _targetDirection TO currentFloor
+            SET Steps TO _targetFloor MINUS currentFloor
+            SET Direction TO Steps DIVIDED BY ABSOLUTE OF Steps
+            SET Steps TO ABSOLUTE OF Steps
+            
+            FOR Steps ADD Direction
+                ADD Direction TO currentFloor
             ENDFOR
-
             SET _targetFloor TO currentFloor
             CALL openDoors
         ENDIF
-
     ENDSEQUENCE
 
     SEQUENCE openDoors
-
-        WRITE "Elevator's doors are opening"
+        DISPLAY "Elevator's doors are opening"
         WAIT 5 secondes
-        WRITE "Elevator's doors are closing"
-
+        DISPLAY "Elevator's doors are closing"
     ENDSEQUENCE
+
     'Creates each Button inside each Elevators according to nbFloors'
     SEQUENCE createElevatorInsideButtons USING nbFloors
         FOR EACH nbFloors
@@ -169,10 +155,9 @@ DEFINE Elevator USING _column AND _id AND nbFloors
 
 ENDDEFINE
 
-'Defines Outside'
-DEFINE outsideButtons USING nbFloors
-
-    SET buttonFloor TO nbFloors Index
+'Defines Outside Buttons'
+DEFINE outsideButtons USING Index
+    SET buttonFloor TO Index
     IF buttonFloor IS EQUAL TO 1
         SET buttonDirectionUp TO 1
     ELSE IF buttonFloor IS EQUAL TO nbFloors LENGTH
@@ -181,16 +166,65 @@ DEFINE outsideButtons USING nbFloors
         SET buttonDirectionUp TO 1
         SET buttonDirectionDown TO -1
     ENDIF
-
-    READ userInputFloor AND userInputDirection 
-        IF userInputDirection IS EQUAL TO "UP"
-            SET userDirection TO buttonDirectionUp
-        ELSE
-            SET userDirection TO buttonDirectionDown
-        ENDIF
-
 ENDDEFINE
 
+'Defines Inside Buttons'
 DEFINE insideButtons USING nbFloors
     SET buttonNumber TO nbFloors Index
 ENDDEFINE
+
+DEFINE MAIN
+    READ nbFloors
+    READ nbElevators
+    READ userInputDirection AND userInputFloor
+    SET column TO NEW Column WITH nbFloors AND nbElevators
+    SET userDirection TO 0
+    IF userInputDirection IS EQUAL TO "UP"
+        SET userDirection TO 1
+    ELSE
+        SET userDirection TO -1
+    ENDIF
+    SET currentElevator TO CALL Column callElevator WITH userDirection AND userInputFloor RETURNING currentElevator
+    READ userInputFloor
+    CALL Column requestFloor WITH userInputFloor AND currentElevator
+
+ENDDEFINE
+
+'SCENARIO 1'
+nbFloors IS EQUAL TO 10
+nbElevators per Column IS EQUAL TO 2
+Column elevatorsList Index 1 currentFloor IS EQUAL TO 2
+Column elevatorsList Index 1 Direction IS EQUAL TO 0
+Column elevatorsList Index 2 currentFloor IS EQUAL TO 6
+Column elevatorsList Index 2 Direction IS EQUAL TO 0
+
+CALL Column callElevator WITH 3 AND "UP"
+CALL Column requestFloor WITH 7 AND currentElevator
+
+'SCENARIO 2'
+Column elevatorsList Index 1 currentFloor IS EQUAL TO 10
+Column elevatorsList Index 1 Direction IS EQUAL TO 0
+Column elevatorsList Index 2 currentFloor IS EQUAL TO 3
+Column elevatorsList Index 2 Direction IS EQUAL TO 0
+
+CALL Column callElevator WITH 1 AND "UP"
+CALL Column requestFloor WITH 6 AND currentElevator
+
+CALL Column callElevator WITH 1 AND "UP"
+CALL Column requestFloor WITH 6 AND currentElevator
+
+CALL Column callElevator WITH 9 AND "DOWN"
+CALL Column requestFloor WITH 2 AND currentElevator
+
+'SCENARIO 3'
+Column elevatorsList Index 1 currentFloor IS EQUAL TO 10
+Column elevatorsList Index 1 Direction IS EQUAL TO 0
+Column elevatorsList Index 2 currentFloor IS EQUAL TO 3
+Column elevatorsList Index 2 Direction IS EQUAL TO 1
+Column elevatorsList Index 2 targetFloor IS EQUAL TO 6
+
+CALL Column callElevator WITH 3 AND "DOWN"
+CALL Column requestFloor WITH 2 AND currentElevator
+
+CALL Column callElevator WITH 10 AND "DOWN"
+CALL Column requestFloor WITH 3 AND currentElevator

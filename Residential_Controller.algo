@@ -9,14 +9,15 @@ DEFINE Column USING nbFloors AND nbElevators
         SET elevatorsList ARRAY OF nbElevators
         FOR nbElevators
             SET Elevator TO NEW Elevator WITH ColumnID AND elevatorIndex AND nbFloors
-            SET elevatorsList elevatorIndex TO Elevator
+            SET elevatorsList elevatorIndex TO NEW Elevator
             INCREMENT elevatorIndex
         ENDFOR
+        RETURN elevatorsList
     ENDSEQUENCE
 
     SEQUENCE createOutsideButtons USING nbFloors
         FOR nbFloors
-            CALL outsideButtons WITH nbFloors Index
+            SET outsideButtons TO NEW outsideButtons WITH nbFloors Index
         ENDFOR
     ENDSEQUENCE
 
@@ -99,7 +100,6 @@ DEFINE Column USING nbFloors AND nbElevators
     ENDSEQUENCE
 
     SEQUENCE callElevator USING userInputFloor AND userDirection RETURN currentElevator
-        SET currentElevator
         SET currentElevator TO CALL findBestElevator WITH userInputFloor AND userDirection RETURNING bestElevator
         CALL waitMovingElevator WITH currentElevator AND userInputFloor AND userDirection
         CALL currentElevator movingElevator WITH userInputFloor
@@ -117,7 +117,6 @@ DEFINE Elevator USING _column AND _id AND nbFloors
     SET ID TO _id
     SET Column TO _column
     SET currentFloor
-    SET elevatorOpenedDoors TO FALSE
     SET Direction TO 0
     SET targetFloor
 
@@ -188,8 +187,6 @@ DEFINE Main
     READ userInputFloor
     CALL Column requestFloor WITH userInputFloor AND currentElevator
 
-ENDDEFINE
-
 'SCENARIO 1'
 nbFloors IS EQUAL TO 10
 nbElevators per Column IS EQUAL TO 2
@@ -228,3 +225,6 @@ CALL Column requestFloor WITH 2 AND currentElevator
 
 CALL Column callElevator WITH 10 AND "DOWN"
 CALL Column requestFloor WITH 3 AND currentElevator
+
+ENDDEFINE
+
